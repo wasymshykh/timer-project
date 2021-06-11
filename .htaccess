@@ -1,0 +1,6 @@
+# forbidden access to directories
+
+RewriteEngine on
+RewriteRule ^classes/?.*$ - [F,L]
+RewriteRule ^app/?.*$ - [F,L]
+RewriteRule ^views/?.*$ - [F,L]
