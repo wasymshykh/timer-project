@@ -39,3 +39,10 @@ function go ($URL)
     header("location: $URL");
     die();
 }
+
+function end_response ($status_code, $data)
+{
+    http_response_code($status_code);
+    echo json_encode(['status' => $status_code, 'data' => $data]);
+    die();
+}

@@ -6,7 +6,15 @@
     </div>
 
     <form method="POST" action="" class="page-form form-main">
-
+        <?php if (!empty($errors)): ?>
+        <div class="page-error">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li><?=$error?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
         <div class="page-input">
             <div class="page-input-td">
                 <label for="name">Name</label>

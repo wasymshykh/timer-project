@@ -33,6 +33,22 @@ class Rooms
         return ['status' => false, 'type' => 'empty'];
     }
 
+    public function get_room_by ($col, $val)
+    {
+        $q = "SELECT * FROM `{$this->table_name}` WHERE `$col` = :v";
+        $s = $this->db->prepare($q);
+        $s->bindParam(":v", $val);
+        if (!$s->execute()) {
+            $failure = $this->class_name.'.get_room_by - E.02: Failure';
+            $this->logs->create($this->class_name_lower, $failure, json_encode($s->errorInfo()));
+            return ['status' => false, 'type' => 'query', 'data' => $failure];
+        }
+        if ($s->rowCount() > 0) {
+            return ['status' => true, 'type' => 'success', 'data' => $s->fetch()];
+        }
+        return ['status' => false, 'type' => 'empty'];
+    }
+
     public function create_room ($name, $url)
     {
         $q = "INSERT INTO `{$this->table_name}` (`room_name`, `room_url`, `room_created`) VALUE (:n, :u, :dt)";
