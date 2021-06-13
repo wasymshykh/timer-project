@@ -114,10 +114,9 @@
 
 </div>
 
-<audio id="alert-sound" src="" preload="auto"></audio>
-
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.1/howler.min.js"></script>
 
 <script>
     toastr.options.closeButton = true;
@@ -214,7 +213,7 @@
 
     let sound_path = {
         'bip bip bip': '<?=URL?>/assets/sound/bip bip bip.wav',
-        'buzzer': '<?=URL?>/assets/sound/bip bip bip.wav',
+        'buzzer': '<?=URL?>/assets/sound/gilfoyle_alert.mp3',
         'dring': '<?=URL?>/assets/sound/bip bip bip.wav'
     }
 
@@ -223,7 +222,12 @@
         room_config.room_status = paused ? 'P' : 'A';
         $('.pause-btn').text(paused ? 'Resume' : 'Pause');
         $('.room-status h3').text(paused ? 'Pause' : 'Work');
-        $('#alert-sound').attr('src', sound_path[room_config.sound])[0].play();
+        
+        var sound = new Howl({
+          src: [sound_path[room_config.sound]],
+          volume: 0.5
+        });
+        sound.play()
     }
 
     $('.pause-btn').on('click', (e) => {
@@ -346,17 +350,16 @@
 
     get_room_info();
     
-    var timer_datetime = new Date("<?=$room['room_work_end_date']?>").getTime();
     var coun = setInterval(function() {
         if (!finished) {
 
             if (!awaiting) {
                 
-                var now = new Date().getTime();
-                var timer_datetime = new Date(room_config.work_end).getTime();
-    
+                var now = (new Date()).getTime();
+                var timer_datetime = moment(room_config.work_end).unix()*1000;
+                
                 var difference = timer_datetime - now;
-    
+                
                 var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
                 

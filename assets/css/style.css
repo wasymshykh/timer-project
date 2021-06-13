@@ -179,6 +179,17 @@ body {
     cursor: pointer;
 }
 
+@media screen and (max-width: 650px) {
+    .page-footer-button {
+        top: unset;
+        bottom: -8px;
+    }
+    .room-link {
+        top: -14px;
+        transform: unset;
+    }
+}
+
 .room-link-text {
     margin-right: 0.2em;
     pointer-events: none;
