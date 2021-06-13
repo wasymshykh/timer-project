@@ -52,7 +52,7 @@
         }
     });
     
-    if (localStorage.getItem('mode') !== undefined) {
+    if (localStorage.getItem('mode') != null) {
 
         let mode = localStorage.getItem('mode');
 

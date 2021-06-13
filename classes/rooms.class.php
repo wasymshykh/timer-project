@@ -49,6 +49,34 @@ class Rooms
         return ['status' => false, 'type' => 'empty'];
     }
 
+    public function delete_room ($room_id)
+    {
+        $q = "DELETE FROM `{$this->table_name}` WHERE `room_id` = :i";
+        $s = $this->db->prepare($q);
+        $s->bindParam(":i", $room_id);
+        if (!$s->execute()) {
+            $failure = $this->class_name.'.delete_room - E.02: Failure';
+            $this->logs->create($this->class_name_lower, $failure, json_encode($s->errorInfo()));
+            return ['status' => false, 'type' => 'query', 'data' => $failure];
+        }
+        return ['status' => true];
+    }
+
+    public function get_rooms ()
+    {
+        $q = "SELECT * FROM `{$this->table_name}`";
+        $s = $this->db->prepare($q);
+        if (!$s->execute()) {
+            $failure = $this->class_name.'.get_rooms - E.02: Failure';
+            $this->logs->create($this->class_name_lower, $failure, json_encode($s->errorInfo()));
+            return ['status' => false, 'type' => 'query', 'data' => $failure];
+        }
+        if ($s->rowCount() > 0) {
+            return ['status' => true, 'type' => 'success', 'data' => $s->fetchAll()];
+        }
+        return ['status' => false, 'type' => 'empty'];
+    }
+
     public function create_room ($name, $url)
     {
         $q = "INSERT INTO `{$this->table_name}` (`room_name`, `room_url`, `room_created`) VALUE (:n, :u, :dt)";

@@ -134,6 +134,7 @@
         room_status: '<?=$room['room_status']??''?>'
     };
     let finished = false;
+    let awaiting = <?=$timer_configured ? 'false' : 'true' ?>;
     let paused = room_config.room_status == 'P' ? true : false;
 
     function apply_configure_difference (changes) {
@@ -141,6 +142,7 @@
             room_config = changes;
             finished = false;
             paused = false;
+            awaiting = false;
             $('.room-status h3').text('Work');
         }
     }
@@ -287,14 +289,24 @@
     function apply_change_difference (changes) {
         if (JSON.stringify(changes) != JSON.stringify(room_config)) {
             
+            change_status = false;
+
+            if (changes.configure_date == null) { return }
+
             if (changes.work_end != room_config.work_end) {
                 if ($('.page-body').hasClass('finished')) {
                     $('.page-body').removeClass('finished').addClass('room');
                     finished = false;
                 }
+
+                if (awaiting) { awaiting = false; change_status = true; }
             }
 
-            if (changes.room_status != room_config.room_status) {
+            if (changes.sound != room_config.sound) {
+                room_config.sound = changes.sound;
+            }
+
+            if (change_status || (changes.room_status != room_config.room_status)) {
                 let isPaused = false;
                 if (changes.room_status == 'P') { isPaused = true; }
                 handle_change_status(isPaused);
@@ -321,10 +333,9 @@
                     apply_online_difference(check_online);
 
                     config = data.data.config;
-
                     var changes = { sound: config.room_sound_type, work_time: config.room_work_time, pause_time: config.room_pause_time, round: config.room_round, configure_date: config.room_configure, work_end: config.work_end, pause_start: config.pause_start, room_status: config.room_status };
-
                     apply_change_difference(changes);
+
                 }
             }
         });
@@ -338,22 +349,27 @@
     var timer_datetime = new Date("<?=$room['room_work_end_date']?>").getTime();
     var coun = setInterval(function() {
         if (!finished) {
-            var now = new Date().getTime();
-            var timer_datetime = new Date(room_config.work_end).getTime();
 
-            var difference = timer_datetime - now;
+            if (!awaiting) {
+                
+                var now = new Date().getTime();
+                var timer_datetime = new Date(room_config.work_end).getTime();
+    
+                var difference = timer_datetime - now;
+    
+                var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                
+                if (minutes < 10) { minutes = "0"+minutes; } 
+                if (hours < 10) { hours = "0"+hours; } 
+                $('.page-counter h1').text(`${hours}:${minutes}`);
+    
+                if (difference < 0) {
+                    finished = true;
+                    $('.page-body').removeClass('room').removeClass('config').addClass('finished');
+                    $('.page-counter h1').text("");
+                }
 
-            var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            
-            if (minutes < 10) { minutes = "0"+minutes; } 
-            if (hours < 10) { hours = "0"+hours; } 
-            $('.page-counter h1').text(`${hours}:${minutes}`);
-
-            if (difference < 0) {
-                finished = true;
-                $('.page-body').removeClass('room').removeClass('config').addClass('finished');
-                $('.page-counter h1').text("");
             }
         }
     }, 1000);

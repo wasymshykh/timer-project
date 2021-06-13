@@ -12,6 +12,10 @@ if (!isset($_SESSION['join_name'])) {
 
 $member_name = $_SESSION['join_name'];
 
+if (isset($_SESSION['join-url']) && !empty($_SESSION['join-url'])) {
+    $_POST['room_url'] = $_SESSION['join-url'];
+}
+
 if (isset($_POST) && !empty($_POST)) {
     
     if (isset($_POST['room_url']) && !empty($_POST['room_url']) && is_string($_POST['room_url']) && !empty(normal_text($_POST['room_url']))) {

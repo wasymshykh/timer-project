@@ -21,6 +21,12 @@ if (!$room['status']) {
 }
 $room = $room['data'];
 
+if (isset($_GET['j'])) {
+    // passing session to index page
+    $_SESSION['join-url'] = $_GET['u'];
+    go(URL.'/');
+}
+
 // checking if the user have access to room
 
 $session = $m->get_cookie_data ();
@@ -72,7 +78,7 @@ if (!empty($room['room_pause_time'])) {
     $room['pause_minute'] = $h[1];
 }
 
-$room_link = URL.'/r.php?u='.$room_url;
+$room_link = URL.'/r.php?u='.$room_url.'&j';
 
 require DIR.'views/layout/header.view.php';
 require DIR.'views/room.view.php';
