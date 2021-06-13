@@ -47,7 +47,30 @@ if (!$member['status']) {
     }
 }
 
+$dafault_section = "room";
+$timer_configured = true;
+if (empty($room['room_configure_date'])) {
+    $timer_configured = false;
+    if ($member['member_type'] == 'H') {
+        $dafault_section = "config";
+    }
+}
 
+// setting default values
+$room['work_hour'] = "";
+$room['work_minute'] = "";
+if (!empty($room['room_work_time'])) {
+    $h = explode(':', $room['room_work_time']);
+    $room['work_hour'] = $h[0];
+    $room['work_minute'] = $h[1];
+}
+$room['pause_hour'] = "";
+$room['pause_minute'] = "";
+if (!empty($room['room_pause_time'])) {
+    $h = explode(':', $room['room_pause_time']);
+    $room['pause_hour'] = $h[0];
+    $room['pause_minute'] = $h[1];
+}
 
 $room_link = URL.'/r.php?u='.$room_url;
 
