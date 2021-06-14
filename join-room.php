@@ -14,7 +14,10 @@ $member_name = $_SESSION['join_name'];
 
 if (isset($_SESSION['join-url']) && !empty($_SESSION['join-url'])) {
     $_POST['room_url'] = $_SESSION['join-url'];
+    unset($_SESSION['join-url']);
 }
+
+$session = $m->get_cookie_data ();
 
 if (isset($_POST) && !empty($_POST)) {
     
@@ -27,6 +30,21 @@ if (isset($_POST) && !empty($_POST)) {
             $errors[] = "Room does not exists";
         } else {
             $result = $result['data'];
+
+            if ($session['status']) {
+                $members = $m->get_members_by('member_room_id', $result['room_id']);
+                if ($members['status']) {
+                    $members = $members['data'];
+                    foreach ($members as $member) {
+                        if ($member['member_id'] === $session['member_id'] && $member['member_name'] === $member_name) {
+                            go(URL.'/r.php?u='.$room_url);
+                        }
+                    }
+                } else {
+                    $members = false;
+                }
+            }
+
         }
 
     } else {

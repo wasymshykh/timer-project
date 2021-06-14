@@ -15,6 +15,9 @@
             </ul>
         </div>
         <?php endif; ?>
+        <?php if (!empty($_SESSION['join-url'])): ?>
+            <p>You are about to join room: <b><?=$_SESSION['join-url']?>.</b> Write your name to enter.</p>
+        <?php endif; ?>
         <div class="page-input">
             <div class="page-input-td">
                 <label for="name">Name</label>
@@ -28,7 +31,9 @@
         </div>
 
         <div class="page-input-submit">
+            <?php if (empty($_SESSION['join-url'])): ?>
             <button type="submit" class="btn-submit" name="create">Create room</button>
+            <?php endif; ?>
             <button type="submit" class="btn-submit" name="join">Join room</button>
         </div>
 

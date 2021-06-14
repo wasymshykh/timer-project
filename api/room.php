@@ -129,6 +129,11 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
         } else {
             $errors[] = "Sound cannot be empty";
         }
+        if (isset($_POST['round']) && is_string($_POST['round']) && !empty($_POST['round'])) {
+            $round = normal_text($_POST['round']);
+        } else {
+            $errors[] = "Round cannot be empty";
+        }
 
         if (empty($errors)) {
 
@@ -140,7 +145,7 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
             $work_end = date('Y-m-d H:i:s', strtotime("+$work_hour hours +$work_minute minutes", strtotime($now)));
             $pause_start = date('Y-m-d H:i:s', strtotime("+$pause_hour hours +$pause_minute minutes", strtotime($now)));
 
-            $result = $r->configure_room($room['room_id'], $work_time, $work_end, $pause_time, $pause_start, $sound);
+            $result = $r->configure_room($room['room_id'], $work_time, $work_end, $pause_time, $pause_start, $sound, $round);
             if ($result['status']) {
                 end_response(200, ['work_time' => $work_time, 'pause_time' => $pause_time, 'sound' => $sound, 'configure_date' => $result['configure_date'], 'work_end' => $work_end, 'pause_start' => $pause_start, 'round' => 1]);
             } else {
@@ -222,7 +227,7 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
         $work_end = date('Y-m-d H:i:s', strtotime("+$work_hour hours +$work_minute minutes", strtotime($now)));
         $pause_start = date('Y-m-d H:i:s', strtotime("+$pause_hour hours +$pause_minute minutes", strtotime($now)));
 
-        $result = $r->configure_room($room['room_id'], $room['room_work_time'], $work_end, $room['room_pause_time'], $pause_start, $room['room_sound_type']);
+        $result = $r->configure_room($room['room_id'], $room['room_work_time'], $work_end, $room['room_pause_time'], $pause_start, $room['room_sound_type'], $room['room_round']);
         if ($result['status']) {
             end_response(200, ['work_time' => $room['room_work_time'], 'pause_time' => $room['room_pause_time'], 'sound' => $room['room_sound_type'], 'configure_date' => $result['configure_date'], 'work_end' => $work_end, 'pause_start' => $pause_start, 'round' => (int)$room['room_round']]);
         } else {

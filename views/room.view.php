@@ -84,10 +84,10 @@
 
         <div class="page-input">
             <div class="page-input-td">
-                <label>Round</label>
+                <label for="round-number">Round</label>
             </div>
             <div class="page-input-td">
-                <div class="room-round">1</div>
+                <input type="number" id="round-number" value="<?=$room['room_round']??'1'?>">
             </div>
         </div>
 
@@ -117,7 +117,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.1/howler.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data-10-year-range.min.js" integrity="sha512-48hjVXIRd5d3sGKDfphGflqnxq91J14nwVO5Q6dHhK66n9XjP4zg0YR8IJRNZSJAVCrjjTU4fgpQgXeyx2lHNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     toastr.options.closeButton = true;
 
@@ -160,6 +160,7 @@
         let el_pause_time_1 = $('#pause-time-1');
         let el_pause_time_2 = $('#pause-time-2');
         let el_sound = $('#sound');
+        let el_round = $('#round-number');
         
         let valid = true;
         
@@ -188,6 +189,11 @@
             valid = false;
             toastr.error('Select the sound')
         }
+        var r = validate_field(el_round.val());
+        if (!r.status) {
+            valid = false;
+            toastr.error('Enter the round number')
+        }
 
         if (valid) {
             
@@ -195,7 +201,7 @@
                 'url': '<?=URL?>/api/room.php?config=<?=$room['room_id']?>',
                 'method': 'POST',
                 data: {work_hour: el_work_time_1.val(), work_minute: el_work_time_2.val(),
-                    pause_hour: el_pause_time_1.val(), pause_minute: el_pause_time_2.val(), sound: el_sound.val()},
+                    pause_hour: el_pause_time_1.val(), pause_minute: el_pause_time_2.val(), sound: el_sound.val(), round: el_round.val()},
                 success: (data, status) => {
                     data = JSON.parse(data);
                     if (data.status == 200) {
@@ -356,16 +362,20 @@
             if (!awaiting) {
                 
                 var now = (new Date()).getTime();
-                var timer_datetime = moment(room_config.work_end).unix()*1000;
+            
+                var timer_datetime = moment.utc(moment.tz(room_config.work_end,"<?=TIMEZONE?>")).unix()*1000;
                 
                 var difference = timer_datetime - now;
                 
                 var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                
+                var seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
                 if (minutes < 10) { minutes = "0"+minutes; } 
                 if (hours < 10) { hours = "0"+hours; } 
-                $('.page-counter h1').text(`${hours}:${minutes}`);
+                if (seconds < 10) { seconds = "0"+seconds; } 
+
+                $('.page-counter h1').text(`${hours}:${minutes}:${seconds}`);
     
                 if (difference < 0) {
                     finished = true;

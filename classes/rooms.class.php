@@ -93,15 +93,16 @@ class Rooms
         return ['status' => true, 'type' => 'success', 'room_id' => $this->db->lastInsertId()];
     }
 
-    public function configure_room ($room_id, $work_time, $work_end, $pause_time, $pause_start, $sound)
+    public function configure_room ($room_id, $work_time, $work_end, $pause_time, $pause_start, $sound, $round)
     {
-        $q = "UPDATE `rooms` SET `room_work_time` = :w, `room_work_end_date` = :we, `room_pause_time` = :p, `room_pause_start_date` = :ps, `room_sound_type` = :s, `room_configure_date` = :dt, `room_status` = 'A' WHERE `room_id` = :i";
+        $q = "UPDATE `rooms` SET `room_work_time` = :w, `room_work_end_date` = :we, `room_pause_time` = :p, `room_pause_start_date` = :ps, `room_sound_type` = :s, `room_configure_date` = :dt, `room_round` = :ro, `room_status` = 'A' WHERE `room_id` = :i";
         $s = $this->db->prepare($q);
         $s->bindParam(":w", $work_time);
         $s->bindParam(":we", $work_end);
         $s->bindParam(":p", $pause_time);
         $s->bindParam(":ps", $pause_start);
         $s->bindParam(":s", $sound);
+        $s->bindParam(":ro", $round);
         $s->bindParam(":i", $room_id);
         $dt = current_date();
         $s->bindParam(":dt", $dt);
