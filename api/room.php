@@ -67,7 +67,7 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
                 // updating last active of requestee
                 $m->update_last_active($member_id);
 
-                $filtered['config'] = ['room_name' => $room['room_name'], 'room_url' => $room['room_url'], 'room_work_time' => $room['room_work_time'], 'room_pause_time' => $room['room_pause_time'], 'room_sound_type' => $room['room_sound_type'], 'room_round' => (int)$room['room_round'], 'room_round_limit' => (int)$room['room_round_limit'], 'room_status' => $room['room_status'], 'pause_start' => $room['room_pause_start'], 'work_end' => $room['room_work_end_date'], 'room_configure' => $room['room_configure_date']];
+                $filtered['config'] = ['room_name' => $room['room_name'], 'room_url' => $room['room_url'], 'room_work_time' => $room['room_work_time'], 'room_pause_time' => $room['room_pause_time'], 'room_sound_type' => $room['room_sound_type'], 'room_round' => (int)$room['room_round'], 'room_round_limit' => (int)$room['room_round_limit'], 'room_status' => $room['room_status'], 'pause_start' => $room['room_pause_start'], 'work_end' => $room['room_work_end_date'], 'room_configure' => $room['room_configure_date'], 'pause_end' => $room['room_pause_end']];
 
                 end_response(200, $filtered);
             } else {
@@ -145,7 +145,7 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
 
             $result = $r->configure_room($room['room_id'], $work_time, $work_end, $pause_time, $sound, $round, $round_limit);
             if ($result['status']) {
-                end_response(200, ['work_time' => $work_time, 'pause_time' => $pause_time, 'sound' => $sound, 'configure_date' => $result['configure_date'], 'work_end' => $work_end, 'round' => 1]);
+                end_response(200, ['work_time' => $work_time, 'pause_time' => $pause_time, 'sound' => $sound, 'configure_date' => $result['configure_date'], 'work_end' => $work_end, 'round' => 1, 'pause_end' => $room['room_pause_end']]);
             } else {
                 end_response(400, "Unable to save changes");
             }
@@ -205,7 +205,6 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
 
 } else if (isset($_GET['reset']) && !empty($_GET['reset']) && is_numeric($_GET['reset'])) {
 
-
     // getting room
     $room_id = normal_text($_GET['reset']);
     $room = $r->get_room_by('room_id', $room_id);
@@ -229,7 +228,41 @@ if (isset($_GET['info']) && !empty($_GET['info']) && is_numeric($_GET['info'])) 
 
         $result = $r->configure_room($room['room_id'], $room['room_work_time'], $work_end, $room['room_pause_time'], $room['room_sound_type'], $room['room_round'], $room['room_round_limit']);
         if ($result['status']) {
-            end_response(200, ['work_time' => $room['room_work_time'], 'pause_time' => $room['room_pause_time'], 'sound' => $room['room_sound_type'], 'configure_date' => $result['configure_date'], 'work_end' => $work_end, 'round' => (int)$room['room_round'], 'round_limit' => (int)$room['room_round_limit']]);
+            end_response(200, ['work_time' => $room['room_work_time'], 'pause_time' => $room['room_pause_time'], 'sound' => $room['room_sound_type'], 'configure_date' => $result['configure_date'], 'work_end' => $work_end, 'round' => (int)$room['room_round'], 'round_limit' => (int)$room['room_round_limit'], 'pause_end' => $room['room_pause_end']]);
+        } else {
+            end_response(400, "Unable to save changes");
+        }
+
+    } else {
+        end_response(404, "Invalid Room");
+    }
+
+} else if (isset($_GET['change_round']) && !empty($_GET['change_round']) && is_numeric($_GET['change_round'])) {
+
+// getting room
+    $room_id = normal_text($_GET['change_round']);
+    $room = $r->get_room_by('room_id', $room_id);
+
+    if ($room['status']) {
+        $room = $room['data'];
+        
+        // checking the token
+        $session = $m->get_cookie_data ();
+        if (!$session['status']) {
+            end_response(403, "Session is invalid");
+        }
+        if ($room['room_id'] !== $session['room_id']) {
+            end_response(403, "You dont have access to this room");
+        }
+        
+        $pause_minute = explode(":", $room['room_pause_time'])[0];
+        $pause_seconds = explode(":", $room['room_pause_time'])[1];
+
+        $pause_end = date('Y-m-d H:i:s', strtotime("+$pause_minute minutes +$pause_seconds seconds", time()));
+
+        $result = $r->room_round_change ($room['room_id'], ($room['room_round']+1), $room['room_work_time'], $pause_end);
+        if ($result['status']) {
+            end_response(200, ['pause_end' => $pause_end]);
         } else {
             end_response(400, "Unable to save changes");
         }

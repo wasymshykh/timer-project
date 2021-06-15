@@ -11,7 +11,8 @@
             <h3><?php if (!$timer_configured):?>Waiting for host... <?php else: ?> <?=$room['room_status'] === 'A'?'Work':'Pause'?><?php endif;?></h3>
         </div>
         <div class="page-counter">
-            <h1></h1>
+            <h1><?php if (!empty($room['room_pause_start'])): ?><?=$room['room_pause_start']?><?php endif; ?></h1>
+            <p>Round: <strong id="r-round"><?=$room['room_round']?></strong></p>
         </div>
         <?php if ($member['member_type'] === 'H'): ?>
         <div class="page-timer-button">
@@ -87,7 +88,7 @@
                 <label for="round-number">Round</label>
             </div>
             <div class="page-input-td">
-                <input type="number" id="round-number" value="<?=$room['room_round']??'1'?>">
+                <input type="number" id="round-number" value="<?=$room['room_round_limit']??'1'?>">
             </div>
         </div>
 
@@ -131,6 +132,7 @@
         configure_date: '<?=$room['room_configure_date']??''?>',
         work_end: '<?=$room['room_work_end_date']??''?>',
         pause_start: '<?=$room['room_pause_start']??''?>',
+        pause_end: '<?=$room['room_pause_end']??''?>',
         room_status: '<?=$room['room_status']??''?>'
     };
     let finished = false;
@@ -143,8 +145,10 @@
             finished = false;
             paused = false;
             awaiting = false;
+            g_round_pause = false;
             $('.room-status h3').text('Work');
             handle_change_status(paused);
+            $('#r-round').text(room_config.round);
         }
     }
 
@@ -211,7 +215,7 @@
                     data = JSON.parse(data);
                     if (data.status == 200) {
                         data = data.data;
-                        var changes = { sound: data.sound, work_time: data.work_time, pause_time: data.pause_time, round: 1, round_limit: data.round, configure_date: data.configure_date, work_end: data.work_end, pause_start: data.pause_start, room_status: 'A' };
+                        var changes = { sound: data.sound, work_time: data.work_time, pause_time: data.pause_time, round: 1, round_limit: data.round, configure_date: data.configure_date, work_end: data.work_end, pause_start: data.pause_start, pause_end: data.pause_end, room_status: 'A' };
                         apply_configure_difference(changes);
                         $('.page-body').removeClass('config').addClass('room');
                     }
@@ -271,7 +275,7 @@
                 data = JSON.parse(data);
                 if (data.status == 200) {
                     data = data.data;
-                    var changes = { sound: data.sound, work_time: data.work_time, pause_time: data.pause_time, round: data.round, configure_date: data.configure_date, work_end: data.work_end, pause_start: data.pause_start, room_status: 'A' };
+                    var changes = { sound: data.sound, work_time: data.work_time, pause_time: data.pause_time, round: data.round, configure_date: data.configure_date, work_end: data.work_end, pause_start: data.pause_start, pause_end: data.pause_end, room_status: 'A' };
                     apply_configure_difference(changes);
                 }
             }
@@ -325,6 +329,10 @@
                 if (awaiting) { awaiting = false; change_status = true; }
             }
 
+            if (changes.round != room_config.round) {
+                $('#r-round').text(changes.round);
+            }
+
             if (changes.sound != room_config.sound) {
                 room_config.sound = changes.sound;
             }
@@ -341,8 +349,9 @@
 
     function get_room_info () {
         $.ajax({
-            'url': '<?=URL?>/api/room.php?info=<?=$room['room_id']?>',
-            'method': 'GET',
+            url: '<?=URL?>/api/room.php?info=<?=$room['room_id']?>',
+            method: 'GET',
+            timeout: 2000,
             success: (data, status) => {
                 data = JSON.parse(data);
 
@@ -356,7 +365,7 @@
                     apply_online_difference(check_online);
 
                     config = data.data.config;
-                    var changes = { sound: config.room_sound_type, work_time: config.room_work_time, pause_time: config.room_pause_time, round: config.room_round, round_limit: config.room_round_limit, configure_date: config.room_configure, work_end: config.work_end, pause_start: config.pause_start, room_status: config.room_status };
+                    var changes = { sound: config.room_sound_type, work_time: config.room_work_time, pause_time: config.room_pause_time, round: config.room_round, round_limit: config.room_round_limit, configure_date: config.room_configure, work_end: config.work_end, pause_start: config.pause_start, pause_end: config.pause_end, room_status: config.room_status };
                     apply_change_difference(changes);
 
                 }
@@ -365,40 +374,118 @@
     }
     setInterval(() => {
         get_room_info();
-    }, 5000);
+    }, 2000);
 
     get_room_info();
 
     let g_minutes = '<?=$room['pause_minutes_at']??'00'?>';
     let g_seconds = '<?=$room['pause_seconds_at']??'00'?>';
+
+    let g_round_change = false;
+    let g_round_pause = <?php if(!empty($room['room_pause_end'])): ?> true <?php else: ?> false <?php endif;  ?>;
+
+    function handle_change_round () {
+        if (!g_round_change) {
+            g_round_change = true;
+            g_round_pause = true;
+
+            $.ajax({
+                url: '<?=URL?>/api/room.php?change_round=<?=$room['room_id']?>',
+                method: 'GET',
+                success: (data, status) => {
+                    data = JSON.parse(data);
+
+                    handle_change_status(true);
+                    room_config.round += 1;
+                    room_config.pause_start = room_config.work_time;
+                    room_config.pause_end = data.data.pause_end;
+                    g_minutes = room_config.work_time.split(":")[0];
+                    g_seconds = room_config.work_time.split(":")[1];
+                    $('.page-counter h1').text(`${g_minutes}:${g_seconds}`);
+                    g_round_change = false;
+                    $('#r-round').text(room_config.round);
+                }
+            });
+        }
+    }
     
     var coun = setInterval(function() {
         if (!finished) {
             
-            
-            if (!awaiting && !paused) {
-                var now = (new Date()).getTime();
-                var timer_datetime = moment.utc(moment.tz(room_config.work_end,"<?=TIMEZONE?>")).unix()*1000;
-                var difference = timer_datetime - now;
-                var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-                var seconds = Math.floor((difference % (1000 * 60)) / 1000);
-                if (minutes < 10) { minutes = "0"+minutes; } 
-                if (seconds < 10) { seconds = "0"+seconds; } 
-                g_minutes = minutes;
-                g_seconds = seconds;
-                
+            <?php if ($member['member_type'] === 'H'): ?>
+            if (g_round_pause) {
 
-                $('.page-counter h1').text(`${minutes}:${seconds}`);
-    
+                var now = (new Date()).getTime();
+                var timer_datetime = moment.utc(moment.tz(room_config.pause_end,"<?=TIMEZONE?>")).unix()*1000;
+                var difference = timer_datetime - now;
+                
                 if (difference < 0) {
-                    finished = true;
-                    $('.page-body').removeClass('room').removeClass('config').addClass('finished');
-                    $('.page-counter h1').text("");
+                    $('.pause-btn').trigger('click');
+                    g_round_pause = false;
+                }
+                
+            } else {
+            <?php endif; ?>
+                
+                if (!awaiting && !paused) {
+
+                    var now = (new Date()).getTime();
+                    var timer_datetime = moment.utc(moment.tz(room_config.work_end,"<?=TIMEZONE?>")).unix()*1000;
+                    var difference = timer_datetime - now;
+                    var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+                    var seconds = Math.floor((difference % (1000 * 60)) / 1000);
+                    if (minutes < 10) { minutes = "0"+minutes; } 
+                    if (seconds < 10) { seconds = "0"+seconds; } 
+                    
+                    
+                    if (difference < 0) {
+    
+                        // checking if the round is available in the limit
+                        if (room_config.round < room_config.round_limit) {
+                            
+                            <?php if ($member['member_type'] === 'H'): ?>
+                                // passing request to change round and pause
+                                handle_change_round();
+                            <?php else: ?>
+                                // pausing the timer
+                                room_config.pause_start = room_config.work_time;
+                                g_minutes = room_config.work_time.split(":")[0];
+                                g_seconds = room_config.work_time.split(":")[1];
+                                g_round_change = false;
+                                if (room_config.pause_end != null) {
+                                    room_config.round += 1;
+                                    $('#r-round').text(room_config.round);
+                                    handle_change_status(true);
+                                }
+                            <?php endif; ?>
+    
+                        } else {
+
+                            // no rounds available
+                            finished = true;
+                            $('.page-body').removeClass('room').removeClass('config').addClass('finished');
+                            $('.page-counter h1').text("");
+
+                        }
+
+
+                    } else {
+    
+                        g_minutes = minutes;
+                        g_seconds = seconds;
+                        $('.page-counter h1').text(`${minutes}:${seconds}`);
+    
+                    }
+    
+                } else if (paused) {
+                    $('.page-counter h1').text(room_config.pause_start);  
                 }
 
-            } else if (paused) {
-                $('.page-counter h1').text(room_config.pause_start);  
+            <?php if ($member['member_type'] === 'H'): ?>
             }
+            <?php endif; ?>
+
+
 
         }
     }, 1000);

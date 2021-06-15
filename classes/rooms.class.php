@@ -95,7 +95,7 @@ class Rooms
 
     public function configure_room ($room_id, $work_time, $work_end, $pause_time, $sound, $round, $round_limit)
     {
-        $q = "UPDATE `rooms` SET `room_work_time` = :w, `room_work_end_date` = :we, `room_pause_time` = :p, `room_sound_type` = :s, `room_configure_date` = :dt, `room_round` = :ro, `room_round_limit` = :rl, `room_status` = 'A' WHERE `room_id` = :i";
+        $q = "UPDATE `rooms` SET `room_work_time` = :w, `room_work_end_date` = :we, `room_pause_time` = :p, `room_sound_type` = :s, `room_configure_date` = :dt, `room_round` = :ro, `room_round_limit` = :rl, `room_status` = 'A', `room_pause_end` = NULL WHERE `room_id` = :i";
         $s = $this->db->prepare($q);
         $s->bindParam(":w", $work_time);
         $s->bindParam(":we", $work_end);
@@ -114,9 +114,26 @@ class Rooms
         return ['status' => true, 'type' => 'success', 'configure_date' => $dt];
     }
 
+    public function room_round_change ($room_id, $round, $pause_start, $pause_end)
+    {
+        $q = "UPDATE `rooms` SET `room_round` = :r, `room_status` = 'P', `room_pause_start` = :p, `room_pause_end` = :pe WHERE `room_id` = :i";
+
+        $s = $this->db->prepare($q);
+        $s->bindParam(":r", $round);
+        $s->bindParam(":p", $pause_start);
+        $s->bindParam(":pe", $pause_end);
+        $s->bindParam(":i", $room_id);
+        if (!$s->execute()) {
+            $failure = $this->class_name.'.room_round_change - E.02: Failure';
+            $this->logs->create($this->class_name_lower, $failure, json_encode($s->errorInfo()));
+            return ['status' => false, 'type' => 'query', 'data' => $failure];
+        }
+        return ['status' => true, 'type' => 'success'];
+    }
+
     public function update_room_status ($room_id, $status, $pause_time, $work_end)
     {
-        $q = "UPDATE `rooms` SET `room_status` = :s, `room_pause_start` = :p, `room_work_end_date` = :we WHERE `room_id` = :i";
+        $q = "UPDATE `rooms` SET `room_status` = :s, `room_pause_start` = :p, `room_work_end_date` = :we, `room_pause_end` = NULL WHERE `room_id` = :i";
         $s = $this->db->prepare($q);
         $s->bindParam(":s", $status);
         $s->bindParam(":p", $pause_time);

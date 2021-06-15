@@ -258,6 +258,16 @@ body {
     text-align: center;
 }
 
+.page-counter p {
+    font-size: 1em;
+    text-align: center;
+}
+
+.page-counter p strong {
+    background-color: #e0e0e0;
+    padding: 0.1em 0.5em;
+}
+
 .page-timer-button {
     display: flex;
     flex-direction: column;
@@ -393,5 +403,9 @@ body {
 }
 
 .dark .room-connected-drop {
+    background-color: #777;
+}
+
+.dark .page-counter p strong {
     background-color: #777;
 }
