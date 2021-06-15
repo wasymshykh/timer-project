@@ -4,3 +4,6 @@ RewriteEngine on
 RewriteRule ^classes/?.*$ - [F,L]
 RewriteRule ^app/?.*$ - [F,L]
 RewriteRule ^views/?.*$ - [F,L]
+
+RewriteRule ^([-\w]+)$ r.php?u=$1 [NC,L]
+RewriteRule ^([-\w]+)\&j$ r.php?u=$1&j [NC,L]

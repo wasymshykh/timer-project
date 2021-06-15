@@ -52,6 +52,7 @@ if (isset($_POST) && !empty($_POST)) {
     if (isset($_SESSION['join-url'])) {
         if (isset($_SESSION['join-url-remove'])) {
             unset($_SESSION['join-url']);
+            unset($_SESSION['join-url-remove']);
         } else {
             $_SESSION['join-url-remove'] = true;
         }

@@ -37,7 +37,7 @@ if (isset($_POST) && !empty($_POST)) {
                     $members = $members['data'];
                     foreach ($members as $member) {
                         if ($member['member_id'] === $session['member_id'] && $member['member_name'] === $member_name) {
-                            go(URL.'/r.php?u='.$room_url);
+                            go(URL.'/'.$room_url);
                         }
                     }
                 } else {
@@ -70,7 +70,7 @@ if (isset($_POST) && !empty($_POST)) {
             // setting cookie
             $m->set_member_cookie($room_id, $member_id);
 
-            go(URL.'/r.php?u='.$room_url);
+            go(URL.'/'.$room_url);
 
         } catch (Exception $e) {
             $db->rollBack();

@@ -58,7 +58,7 @@ if (isset($_POST) && !empty($_POST)) {
             // setting cookie
             $m->set_member_cookie($room_id, $member_id);
 
-            go(URL.'/r.php?u='.$room_url);
+            go(URL.'/'.$room_url);
 
         } catch (Exception $e) {
             $db->rollBack();

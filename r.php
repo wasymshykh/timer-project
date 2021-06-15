@@ -24,6 +24,8 @@ $room = $room['data'];
 if (isset($_GET['j'])) {
     // passing session to index page
     $_SESSION['join-url'] = $_GET['u'];
+
+    if (isset($_SESSION['join-url-remove'])) { unset($_SESSION['join-url-remove']); }
     go(URL.'/');
 }
 
@@ -85,7 +87,7 @@ if ($room['room_status'] === 'P' && !empty($room['room_pause_start'])) {
     $room['pause_seconds_at'] = $h[1];
 }
 
-$room_link = URL.'/r.php?u='.$room_url.'&j';
+$room_link = URL.'/'.$room_url.'&j';
 
 require DIR.'views/layout/header.view.php';
 require DIR.'views/room.view.php';
