@@ -63,19 +63,26 @@ if (empty($room['room_configure_date'])) {
 }
 
 // setting default values
-$room['work_hour'] = "00";
 $room['work_minute'] = "00";
+$room['work_seconds'] = "00";
 if (!empty($room['room_work_time'])) {
     $h = explode(':', $room['room_work_time']);
-    $room['work_hour'] = $h[0];
-    $room['work_minute'] = $h[1];
+    $room['work_minute'] = $h[0];
+    $room['work_seconds'] = $h[1];
 }
-$room['pause_hour'] = "00";
 $room['pause_minute'] = "00";
+$room['pause_seconds'] = "00";
 if (!empty($room['room_pause_time'])) {
     $h = explode(':', $room['room_pause_time']);
-    $room['pause_hour'] = $h[0];
-    $room['pause_minute'] = $h[1];
+    $room['pause_minute'] = $h[0];
+    $room['pause_seconds'] = $h[1];
+}
+
+// checking for the pause value on pause condition
+if ($room['room_status'] === 'P' && !empty($room['room_pause_start'])) {
+    $h = explode(':', $room['room_pause_start']);
+    $room['pause_minutes_at'] = $h[0];
+    $room['pause_seconds_at'] = $h[1];
 }
 
 $room_link = URL.'/r.php?u='.$room_url.'&j';

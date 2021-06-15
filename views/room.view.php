@@ -50,9 +50,9 @@
                 <label for="work-time-1">Work Time</label>
             </div>
             <div class="page-input-td time-td">
-                <input type="text" id="work-time-1" value="<?=$room['work_hour']?>" minlength="2" maxlength="2" placeholder="00" required>
+                <input type="text" id="work-time-1" value="<?=$room['work_minute']?>" minlength="2" maxlength="2" placeholder="00" required>
                 <div class="page-input-td-span">:</div>
-                <input type="text" id="work-time-2" value="<?=$room['work_minute']?>" minlength="2" maxlength="2" placeholder="00" required>
+                <input type="text" id="work-time-2" value="<?=$room['work_seconds']?>" minlength="2" maxlength="2" placeholder="00" required>
                 <div class="page-input-td-span">min</div>
             </div>
         </div>
@@ -62,9 +62,9 @@
                 <label for="pause-time-1">Pause</label>
             </div>
             <div class="page-input-td time-td">
-                <input type="text" id="pause-time-1" value="<?=$room['pause_hour']?>" minlength="2" maxlength="2" placeholder="00" required>
+                <input type="text" id="pause-time-1" value="<?=$room['pause_minute']?>" minlength="2" maxlength="2" placeholder="00" required>
                 <div class="page-input-td-span">:</div>
-                <input type="text" id="pause-time-2" value="<?=$room['pause_minute']?>" minlength="2" maxlength="2" placeholder="00" required>
+                <input type="text" id="pause-time-2" value="<?=$room['pause_seconds']?>" minlength="2" maxlength="2" placeholder="00" required>
                 <div class="page-input-td-span">min</div>
             </div>
         </div>
@@ -126,10 +126,11 @@
         sound: '<?=$room['room_sound_type']??''?>',
         work_time: '<?=$room['room_work_time']??''?>',
         pause_time: '<?=$room['room_pause_time']??''?>',
-        round: <?=$room['room_round']??1?>,
+        round: <?=$room['room_round']?>,
+        round_limit: <?=$room['room_round_limit']?>,
         configure_date: '<?=$room['room_configure_date']??''?>',
         work_end: '<?=$room['room_work_end_date']??''?>',
-        pause_start: '<?=$room['room_pause_start_date']??''?>',
+        pause_start: '<?=$room['room_pause_start']??''?>',
         room_status: '<?=$room['room_status']??''?>'
     };
     let finished = false;
@@ -143,6 +144,7 @@
             paused = false;
             awaiting = false;
             $('.room-status h3').text('Work');
+            handle_change_status(paused);
         }
     }
 
@@ -167,22 +169,22 @@
         var r = validate_field(el_work_time_1.val());
         if (!r.status) {
             valid = false;
-            toastr.error('Work time hours field cannot be empty')
+            toastr.error('Work time minutes field cannot be empty')
         }
         var r = validate_field(el_work_time_2.val());
         if (!r.status) {
             valid = false;
-            toastr.error('Work time minutes field cannot be empty')
+            toastr.error('Work time seconds field cannot be empty')
         }
         var r = validate_field(el_pause_time_1.val());
         if (!r.status) {
             valid = false;
-            toastr.error('Pause time hours field cannot be empty')
+            toastr.error('Pause time minutes field cannot be empty')
         }
         var r = validate_field(el_pause_time_2.val());
         if (!r.status) {
             valid = false;
-            toastr.error('Pause time minutes field cannot be empty')
+            toastr.error('Pause time seconds field cannot be empty')
         }
         var r = validate_field(el_sound.val());
         if (!r.status) {
@@ -198,15 +200,18 @@
         if (valid) {
             
             $.ajax({
-                'url': '<?=URL?>/api/room.php?config=<?=$room['room_id']?>',
-                'method': 'POST',
-                data: {work_hour: el_work_time_1.val(), work_minute: el_work_time_2.val(),
-                    pause_hour: el_pause_time_1.val(), pause_minute: el_pause_time_2.val(), sound: el_sound.val(), round: el_round.val()},
+                url: '<?=URL?>/api/room.php?config=<?=$room['room_id']?>',
+                method: 'POST',
+                data: {
+                    work_minute: el_work_time_1.val(), work_seconds: el_work_time_2.val(),
+                    pause_minute: el_pause_time_1.val(), pause_seconds: el_pause_time_2.val(), 
+                    sound: el_sound.val(), round: el_round.val()
+                },
                 success: (data, status) => {
                     data = JSON.parse(data);
                     if (data.status == 200) {
                         data = data.data;
-                        var changes = { sound: data.sound, work_time: data.work_time, pause_time: data.pause_time, round: data.round, configure_date: data.configure_date, work_end: data.work_end, pause_start: data.pause_start, room_status: 'A' };
+                        var changes = { sound: data.sound, work_time: data.work_time, pause_time: data.pause_time, round: 1, round_limit: data.round, configure_date: data.configure_date, work_end: data.work_end, pause_start: data.pause_start, room_status: 'A' };
                         apply_configure_difference(changes);
                         $('.page-body').removeClass('config').addClass('room');
                     }
@@ -226,6 +231,7 @@
     function handle_change_status (isPaused) {
         paused = isPaused;
         room_config.room_status = paused ? 'P' : 'A';
+        room_config.pause_start = g_minutes+":"+g_seconds;
         $('.pause-btn').text(paused ? 'Resume' : 'Pause');
         $('.room-status h3').text(paused ? 'Pause' : 'Work');
         
@@ -240,9 +246,16 @@
         
         let parm = paused ? 'resume' : 'pause';
         $.ajax({
-            'url': '<?=URL?>/api/room.php?status=<?=$room['room_id']?>&'+parm+'=true',
-            'method': 'GET',
+            url: '<?=URL?>/api/room.php?status=<?=$room['room_id']?>&'+parm+'=true',
+            method: 'POST',
+            data: { at_minute: g_minutes, at_seconds: g_seconds },
             success: (data, status) => {
+                data = JSON.parse(data);
+                if (data.status === 200) {
+                    data = data.data;
+                    room_config.work_end = data.work_end;
+                }
+                
                 handle_change_status(!paused);
             }
         });
@@ -343,7 +356,7 @@
                     apply_online_difference(check_online);
 
                     config = data.data.config;
-                    var changes = { sound: config.room_sound_type, work_time: config.room_work_time, pause_time: config.room_pause_time, round: config.room_round, configure_date: config.room_configure, work_end: config.work_end, pause_start: config.pause_start, room_status: config.room_status };
+                    var changes = { sound: config.room_sound_type, work_time: config.room_work_time, pause_time: config.room_pause_time, round: config.room_round, round_limit: config.room_round_limit, configure_date: config.room_configure, work_end: config.work_end, pause_start: config.pause_start, room_status: config.room_status };
                     apply_change_difference(changes);
 
                 }
@@ -355,27 +368,27 @@
     }, 5000);
 
     get_room_info();
+
+    let g_minutes = '<?=$room['pause_minutes_at']??'00'?>';
+    let g_seconds = '<?=$room['pause_seconds_at']??'00'?>';
     
     var coun = setInterval(function() {
         if (!finished) {
-
-            if (!awaiting) {
-                
-                var now = (new Date()).getTime();
             
+            
+            if (!awaiting && !paused) {
+                var now = (new Date()).getTime();
                 var timer_datetime = moment.utc(moment.tz(room_config.work_end,"<?=TIMEZONE?>")).unix()*1000;
-                
                 var difference = timer_datetime - now;
-                
-                var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
                 var seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
                 if (minutes < 10) { minutes = "0"+minutes; } 
-                if (hours < 10) { hours = "0"+hours; } 
                 if (seconds < 10) { seconds = "0"+seconds; } 
+                g_minutes = minutes;
+                g_seconds = seconds;
+                
 
-                $('.page-counter h1').text(`${hours}:${minutes}:${seconds}`);
+                $('.page-counter h1').text(`${minutes}:${seconds}`);
     
                 if (difference < 0) {
                     finished = true;
@@ -383,7 +396,10 @@
                     $('.page-counter h1').text("");
                 }
 
+            } else if (paused) {
+                $('.page-counter h1').text(room_config.pause_start);  
             }
+
         }
     }, 1000);
 
