@@ -93,9 +93,9 @@ class Rooms
         return ['status' => true, 'type' => 'success', 'room_id' => $this->db->lastInsertId()];
     }
 
-    public function configure_room ($room_id, $work_time, $work_end, $pause_time, $sound, $round, $round_limit)
+    public function configure_room ($room_id, $work_time, $work_end, $pause_time, $sound, $round, $round_limit, $pause_end = null, $room_status = 'A')
     {
-        $q = "UPDATE `rooms` SET `room_work_time` = :w, `room_work_end_date` = :we, `room_pause_time` = :p, `room_sound_type` = :s, `room_configure_date` = :dt, `room_round` = :ro, `room_round_limit` = :rl, `room_status` = 'A', `room_pause_end` = NULL WHERE `room_id` = :i";
+        $q = "UPDATE `rooms` SET `room_work_time` = :w, `room_work_end_date` = :we, `room_pause_time` = :p, `room_sound_type` = :s, `room_configure_date` = :dt, `room_round` = :ro, `room_round_limit` = :rl, `room_status` = :st, `room_pause_end` = :pe, `room_stop_start` = NULL WHERE `room_id` = :i";
         $s = $this->db->prepare($q);
         $s->bindParam(":w", $work_time);
         $s->bindParam(":we", $work_end);
@@ -103,6 +103,8 @@ class Rooms
         $s->bindParam(":s", $sound);
         $s->bindParam(":ro", $round);
         $s->bindParam(":rl", $round_limit);
+        $s->bindParam(":st", $room_status);
+        $s->bindParam(":pe", $pause_end);
         $s->bindParam(":i", $room_id);
         $dt = current_date();
         $s->bindParam(":dt", $dt);
@@ -114,14 +116,16 @@ class Rooms
         return ['status' => true, 'type' => 'success', 'configure_date' => $dt];
     }
 
-    public function room_round_change ($room_id, $round, $pause_start, $pause_end)
+    public function room_round_change ($room_id, $round, $pause_start, $pause_end, $work_end, $status)
     {
-        $q = "UPDATE `rooms` SET `room_round` = :r, `room_status` = 'P', `room_pause_start` = :p, `room_pause_end` = :pe WHERE `room_id` = :i";
+        $q = "UPDATE `rooms` SET `room_round` = :r, `room_status` = :s, `room_pause_start` = :p, `room_pause_end` = :pe, `room_work_end_date` = :we WHERE `room_id` = :i";
 
         $s = $this->db->prepare($q);
         $s->bindParam(":r", $round);
         $s->bindParam(":p", $pause_start);
         $s->bindParam(":pe", $pause_end);
+        $s->bindParam(":we", $work_end);
+        $s->bindParam(":s", $status);
         $s->bindParam(":i", $room_id);
         if (!$s->execute()) {
             $failure = $this->class_name.'.room_round_change - E.02: Failure';
@@ -131,13 +135,13 @@ class Rooms
         return ['status' => true, 'type' => 'success'];
     }
 
-    public function update_room_status ($room_id, $status, $pause_time, $work_end)
+    public function update_room_status ($room_id, $stop_start, $work_end, $pause_end)
     {
-        $q = "UPDATE `rooms` SET `room_status` = :s, `room_pause_start` = :p, `room_work_end_date` = :we, `room_pause_end` = NULL WHERE `room_id` = :i";
+        $q = "UPDATE `rooms` SET `room_stop_start` = :st, `room_work_end_date` = :we, `room_pause_end` = :pe WHERE `room_id` = :i";
         $s = $this->db->prepare($q);
-        $s->bindParam(":s", $status);
-        $s->bindParam(":p", $pause_time);
+        $s->bindParam(":st", $stop_start);
         $s->bindParam(":we", $work_end);
+        $s->bindParam(":pe", $pause_end);
         $s->bindParam(":i", $room_id);
         if (!$s->execute()) {
             $failure = $this->class_name.'.update_room_status - E.02: Failure';
